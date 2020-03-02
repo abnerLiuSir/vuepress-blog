@@ -1,6 +1,9 @@
 module.exports = {
     title: 'abnerLiu 的私人空间',
     description: '集博客与笔记，生活与一身',
+    head: [
+        ['link', { rel: 'icon', href: '/img/brush.png' }]
+    ],
     base: '/',
     themeConfig: {
         nav: [
