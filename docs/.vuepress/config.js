@@ -19,5 +19,21 @@ module.exports = {
             ]
         },
     },
-    plugins: ['@vuepress/blog']
+    plugins: [
+        [
+            '@vuepress/blog',
+            {
+                directories: [
+                    {
+                        // Unique ID of current classification
+                        id: 'study',
+                        // Target directory
+                        dirname: 'study',
+                        // Path of the `entry page` (or `list page`)
+                        path: '/guide',
+                    },
+                ],
+            },
+        ],
+    ],
 }
