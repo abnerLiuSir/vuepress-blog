@@ -8,32 +8,26 @@ module.exports = {
     themeConfig: {
         nav: [
             { text: 'Home', link: '/' },
-            { text: '学习笔记', link: '/guide/study/index.md' },
-            { text: '每日一题', link: '/guide/daily-question/index.md' },
+            { text: '学习笔记', link: '/study/' },
+            { text: '每日一题', link: '/daily-question/' },
         ],
-        themeConfig: {
-            sidebar: [
-                '/',
-                '/guide/study/index.md',
-                '/guide/daily-question/index.md'
+        sidebar: {
+            '/study/':[
+                {
+                    title: 'Flutter', 
+                    collapsable: true, 
+                    children: [
+                        '/study/flutter/variable', 
+                    ]
+                },
+                {
+                    title: '计算机网络', 
+                    collapsable: true, 
+                    children: [
+                        '/study/network/protocol', 
+                    ]
+                },
             ]
         },
     },
-    plugins: [
-        [
-            '@vuepress/blog',
-            {
-                directories: [
-                    {
-                        // Unique ID of current classification
-                        id: 'study',
-                        // Target directory
-                        dirname: 'study',
-                        // Path of the `entry page` (or `list page`)
-                        path: '/guide',
-                    },
-                ],
-            },
-        ],
-    ],
 }
