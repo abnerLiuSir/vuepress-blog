@@ -1,28 +1,28 @@
 
 # Dart - 变量
 - 变量类型可以自动推断，或显示绑定 
-```
+```dart
 void main() {
   var name = 'abner';
   name = 1; //A value of type 'int' can't be assigned to a variable of type 'String'.
 }
 ```
 `name`已经被推断为`String`类型 不能在赋值数字 除非用`dynamic`定义
-```
+```dart
 void main() {
   dynamic  name = 'abner';
   name = 1; 
 }
 ```
 - 未初始化的变量其值都为null， 包括数字
-```
+```dart
 void main() {
   int lineCount;
   print(lineCount == null); // true
 }
 ```
 - final 和 const变量只能赋值一次 
-```
+```dart
 void main() {
   final firstName = 'Liu';
   const lastName = 'abner';
@@ -31,7 +31,7 @@ void main() {
 }
 ```
 区别就是
-```
+```dart
 //const可以使用其他const常量的值来初始化其值
 const width=100;
 const height=50;
@@ -53,7 +53,7 @@ print(identical(a1, a2));//true
 const 还可以用来声明**常值**  
 常量：为了避免寻址  
 常值：为了防止内容发生变化
-```
+```dart
 //const 可以进行算术运算
 void main() {
   const r = 10;
