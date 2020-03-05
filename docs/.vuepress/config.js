@@ -18,6 +18,7 @@ module.exports = {
                     collapsable: true, 
                     children: [
                         '/study/flutter/variable', 
+                        '/study/flutter/type'
                     ]
                 },
                 {
@@ -30,4 +31,5 @@ module.exports = {
             ]
         },
     },
+    plugins: ['@vuepress/active-header-links','@vuepress/back-to-top']
 }
