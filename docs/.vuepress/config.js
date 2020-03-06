@@ -18,7 +18,8 @@ module.exports = {
                     collapsable: true, 
                     children: [
                         '/study/flutter/variable', 
-                        '/study/flutter/type'
+                        '/study/flutter/type',
+                        '/study/flutter/function'
                     ]
                 },
                 {
