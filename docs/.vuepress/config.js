@@ -19,7 +19,9 @@ module.exports = {
                     children: [
                         '/study/flutter/variable', 
                         '/study/flutter/type',
-                        '/study/flutter/function'
+                        '/study/flutter/function',
+                        '/study/flutter/Operator',
+                        
                     ]
                 },
                 {
