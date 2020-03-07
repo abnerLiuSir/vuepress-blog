@@ -23,6 +23,7 @@ module.exports = {
                         '/study/flutter/Operator',
                         '/study/flutter/control',
                         '/study/flutter/abnormal',
+                        '/study/flutter/class',
                     ]
                 },
                 {
