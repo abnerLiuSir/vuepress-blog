@@ -22,6 +22,7 @@ module.exports = {
                         '/study/flutter/function',
                         '/study/flutter/Operator',
                         '/study/flutter/control',
+                        '/study/flutter/abnormal',
                     ]
                 },
                 {
@@ -29,6 +30,15 @@ module.exports = {
                     collapsable: true, 
                     children: [
                         '/study/network/protocol', 
+                    ]
+                },
+            ],
+            '/daily-question/': [
+                {
+                    title: '算法', 
+                    collapsable: true, 
+                    children: [
+                        '/study/algorithm/protocol', 
                     ]
                 },
             ]
