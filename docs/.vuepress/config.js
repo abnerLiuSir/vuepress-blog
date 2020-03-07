@@ -21,7 +21,7 @@ module.exports = {
                         '/study/flutter/type',
                         '/study/flutter/function',
                         '/study/flutter/Operator',
-                        
+                        '/study/flutter/control',
                     ]
                 },
                 {
