@@ -25,6 +25,7 @@ module.exports = {
                         '/study/flutter/abnormal',
                         '/study/flutter/class',
                         '/study/flutter/generic',
+                        '/study/flutter/library',
                     ]
                 },
                 {
