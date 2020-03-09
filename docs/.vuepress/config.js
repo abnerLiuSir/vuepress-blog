@@ -26,6 +26,8 @@ module.exports = {
                         '/study/flutter/class',
                         '/study/flutter/generic',
                         '/study/flutter/library',
+                        '/study/flutter/async',
+                        
                     ]
                 },
                 {
