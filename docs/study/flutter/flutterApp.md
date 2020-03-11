@@ -124,7 +124,7 @@ class _MyHomePageState extends State<MyHomePage> {
     - 一个 State类； StatefulWidget类本身是不变的，但是State类中持有的状态在widget生命周期中可能会发生变化。 
 
 ` _MyHomePageState`类是MyHomePage类对应的状态类。看到这里，读者可能已经发现：和MyApp 类不同， MyHomePage类中并没有build方法，取而代之的是，build方法被挪到了_MyHomePageState方法中，至于为什么这么做，先留个疑问，在分析完完整代码后再来解答。
-## State类
+### State类
 接下来，我们看看_MyHomePageState中都包含哪些东西：
 1. 该组件的状态。由于我们只需要维护一个点击次数计数器，所以定义一个_counter状态：
 ```dart
@@ -174,7 +174,7 @@ Widget build(BuildContext context) {
 - `body`的组件树中包含了一个Center 组件，Center 可以将其子组件树对齐到屏幕中心。此例中， Center 子组件是一个Column 组件，Column的作用是将其所有子组件沿屏幕垂直方向依次排列； 此例中Column子组件是两个 Text，第一个Text 显示固定文本 “You have pushed the button this many times:”，第二个Text 显示_counter状态的数值。
 - `floatingActionButton`是页面右下角的带“+”的悬浮按钮，它的onPressed属性接受一个回调函数，代表它被点击后的处理器，本例中直接将_incrementCounter方法作为其处理函数。  
 现在，我们将整个计数器执行流程串起来：当右下角的floatingActionButton按钮被点击之后，会调用`_incrementCounter`方法。在`_incrementCounter`方法中，首先会自增`_counter`计数器（状态），然后setState会通知Flutter框架状态发生变化，接着，Flutter框架会调用build方法以新的状态重新构建UI，最终显示在设备屏幕上。
-## 为什么要将build方法放在State中，而不是放在StatefulWidget中？
+### 为什么要将build方法放在State中，而不是放在StatefulWidget中？
 现在，我们回答之前提出的问题，为什么`build()`方法放在State（而不是StatefulWidget）中 ？这主要是为了提高开发的灵活性。如果将build()方法放在StatefulWidget中则会有两个问题：
 - 状态访问不便  
 试想一下，如果我们的`StatefulWidget`有很多状态，而每次状态改变都要调用build方法，所以状态是保存在State中的，如果build方法在StatefulWidget中，那么build方法和状态分别在两个类中，那么构建时读取状态将会很不方便！试想一下，如果真的将build方法放在StatefulWidget中的话，由于构建用户界面过程需要依赖State，所以build方法将必须加一个State参数，大概是下面这样：
@@ -203,3 +203,68 @@ class MyAnimationWidget extends AnimatedWidget{
 1. AnimatedWidget的状态对象是AnimatedWidget内部实现细节，不应该暴露给外部。
 2. 如果要将父类状态暴露给子类，那么必须得有一种传递机制，而做这一套传递机制是无意义的，因为父子类之间状态的传递和子类本身逻辑是无关的。  
 综上所述，可以发现，对于StatefulWidget，将build方法放在State中，可以给开发带来很大的灵活性。
+##  路由管理
+路由(Route)在移动开发中通常指页面（Page），这跟web开发中单页应用的Route概念意义是相同的，Route在Android中通常指一个Activity，在iOS中指一个ViewController。所谓路由管理，就是管理页面之间如何跳转，通常也可被称为导航管理。Flutter中的路由管理和原生开发类似，无论是Android还是iOS，导航管理都会维护一个路由栈，路由入栈(push)操作对应打开一个新页面，路由出栈(pop)操作对应页面关闭操作，而路由管理主要是指如何来管理路由栈。
+### 一个简单示例
+1. 创建一个新路由，命名“NewRoute”
+```dart
+class NewRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("New route"),
+      ),
+      body: Center(
+        child: Text("This is new route"),
+      ),
+    );
+  }
+}
+```
+新路由继承自StatelessWidget，界面很简单，在页面中间显示一句"This is new route"。
+2. 在_MyHomePageState.build方法中的Column的子widget中添加一个按钮（FlatButton） :
+```dart
+Column(
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: <Widget>[
+  ... //省略无关代码
+  FlatButton(
+    child: Text("open new route"),
+    textColor: Colors.blue,
+    onPressed: () {
+    //导航到新路由   
+    Navigator.push( context,
+      MaterialPageRoute(builder: (context) {
+        return NewRoute();
+      }));
+    },
+    ),
+  ],
+)
+```
+我们添加了一个打开新路由的按钮，并将按钮文字颜色设置为蓝色，点击该按钮后就会打开新的路由页面
+### MaterialPageRoute
+`MaterialPageRoute`继承自PageRoute类，`PageRoute`类是一个抽象类，表示占有整个屏幕空间的一个模态路由页面，它还定义了路由构建及切换时过渡动画的相关接口及属性。`MaterialPageRoute` 是Material组件库提供的组件，它可以针对不同平台，实现与平台页面切换动画风格一致的路由切换动画：  
+下面我们介绍一下`MaterialPageRoute `构造函数的各个参数的意义：
+```dart
+MaterialPageRoute({
+  WidgetBuilder builder,
+  RouteSettings settings,
+  bool maintainState = true,
+  bool fullscreenDialog = false,
+})
+```
+- builder: 是一个`WidgetBuilder`类型的回调函数，它的作用是构建路由页面的具体内容，返回值是一个widget。我们通常要实现此回调，返回新路由的实例。
+- settings: 包含路由的配置信息，如路由名称、是否初始路由（首页）。
+- maintainState：默认情况下，当入栈一个新路由时，原来的路由仍然会被保存在内存中，如果想在路由没用的时候释放其所占用的所有资源，可以设置maintainState为`false`。
+- fullscreenDialog: 表示新的路由页面是否是一个全屏的模态对话框，在iOS中，如果fullscreenDialog为true，新页面将会从屏幕底部滑入（而不是水平方向）。
+>如果想自定义路由切换动画，可以自己继承PageRoute来实现，我们将在后面介绍动画时，实现一个自定义的路由组件。
+### Navigator
+Navigator是一个路由管理的组件，它提供了打开和退出路由页方法。Navigator通过一个栈来管理活动路由集合。通常当前屏幕显示的页面就是栈顶的路由。Navigator提供了一系列方法来管理路由栈，在此我们只介绍其最常用的两个方法：
+- **Future push(BuildContext context, Route route)**   
+将给定的路由入栈（即打开新的页面），返回值是一个Future对象，用以接收新路由出栈（即关闭）时的返回数据。
+- **bool pop(BuildContext context, [ result ])**  
+将栈顶路由出栈，result为页面关闭时返回给上一个页面的数据。
+- **实例方法**  
+`Navigator`类中第一个参数为`context`的**静态方法**都对应一个Navigator的**实例方法**， 比如`Navigator.push(BuildContext context, Route route)`等价于`Navigator.of(context).push(Route route)` ，下面命名路由相关的方法也是一样的。

@@ -27,7 +27,7 @@ module.exports = {
                         '/study/flutter/generic',
                         '/study/flutter/library',
                         '/study/flutter/async',
-                        '/study/flutter/flutterApp-counter',
+                        '/study/flutter/flutterApp',
                     ]
                 },
                 {
