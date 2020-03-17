@@ -266,5 +266,27 @@ I/flutter ( 5436): dispose
 5. 在State对象从树中一个位置移除后（会调用deactivate）又重新插入到树的其它位置之后。
 - `reassemble()`：此回调是专门为了开发调试而提供的，在热重载(hot reload)时会被调用，此回调在Release模式下永远不会被调用。
 `didUpdateWidget()`：在widget重新构建时，Flutter framework会调用Widget.canUpdate来检测Widget树中同一位置的新旧节点，然后决定是否需要更新，如果Widget.canUpdate返回true则会调用此回调。正如之前所述，Widget.canUpdate会在新旧widget的key和runtimeType同时相等时会返回true，也就是说在在新旧widget的key和runtimeType同时相等时didUpdateWidget()就会被调用。
-deactivate()：当State对象从树中被移除时，会调用此回调。在一些场景下，Flutter framework会将State对象重新插到树中，如包含此State对象的子树在树的一个位置移动到另一个位置时（可以通过GlobalKey来实现）。如果移除后没有重新插入到树中则紧接着会调用dispose()方法。
-dispose()：当State对象从树中被永久移除时调用；通常在此回调中释放资源。
+- `deactivate()`：当State对象从树中被移除时，会调用此回调。在一些场景下，Flutter framework会将State对象重新插到树中，如包含此State对象的子树在树的一个位置移动到另一个位置时（可以通过GlobalKey来实现）。如果移除后没有重新插入到树中则紧接着会调用dispose()方法。
+- `dispose()`：当State对象从树中被永久移除时调用；通常在此回调中释放资源。  
+
+StatefulWidget生命周期  
+![state](../../.vuepress/public/img/state.jpg)
+>注意：在继承StatefulWidget重写其方法时，对于包含@mustCallSuper标注的父类方法，都要在子类方法中先调用父类方法。
+### 在Widget树中获取State对象
+由于`StatefulWidget`的的具体逻辑都在其State中，所以很多时候，我们需要获取StatefulWidget对应的State对象来调用一些方法，比如Scaffold组件对应的状态类ScaffoldState中就定义了打开SnackBar(路由页底部提示条)的方法。我们有两种方法在子widget树中获取父级StatefulWidget的State对象。
+
+## 状态管理
+响应式的编程框架中都会有一个永恒的主题——“状态(State)管理”，无论是在React/Vue（两者都是支持响应式编程的Web开发框架）还是Flutter中，他们讨论的问题和解决的思想都是一致的。所以，如果你对React/Vue的状态管理有了解，可以跳过本节。言归正传，我们想一个问题，`StatefulWidget`的状态应该被谁管理？Widget本身？父Widget？都会？还是另一个对象？答案是取决于实际情况！以下是管理状态的最常见的方法：
+
+- Widget管理自己的状态。
+- Widget管理子Widget状态。
+- 混合管理（父Widget和子Widget都管理状态）。  
+
+如何决定使用哪种管理方法？下面是官方给出的一些原则可以帮助你做决定：
+
+- 如果状态是用户数据，如复选框的选中状态、滑块的位置，则该状态最好由父Widget管理。
+- 如果状态是有关界面外观效果的，例如颜色、动画，那么状态最好由Widget本身来管理。
+- 如果某一个状态是不同Widget共享的则最好由它们共同的父Widget管理。
+在Widget内部管理状态封装性会好一些，而在父Widget中管理会比较灵活。有些时候，如果不确定到底该怎么管理状态，那么推荐的首选是在父widget中管理（灵活会显得更重要一些）。
+
+接下来，我们将通过创建三个简单示例TapboxA、TapboxB和TapboxC来说明管理状态的不同方式。 这些例子功能是相似的 ——创建一个盒子，当点击它时，盒子背景会在绿色与灰色之间切换。状态 _active确定颜色：绿色为true ，灰色为false
