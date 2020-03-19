@@ -1005,3 +1005,181 @@ Row(
   ],
 )
 ```
+## 单选开关和复选框
+`Material` 组件库中提供了`Material`风格的单选开关`Switch`和复选框`Checkbox`，虽然它们都是继承自`StatefulWidget`，但它们本身不会保存当前选中状态，**选中状态都是由父组件来管理的**。当`Switch`或`Checkbox`被点击时，会触发它们的`onChanged`回调，我们可以在此回调中处理选中状态改变逻辑。下面看一个简单的例子：
+```dart
+class SwitchAndCheckBoxTestRoute extends StatefulWidget {
+  @override
+  _SwitchAndCheckBoxTestRouteState createState() => new _SwitchAndCheckBoxTestRouteState();
+}
+
+class _SwitchAndCheckBoxTestRouteState extends State<SwitchAndCheckBoxTestRoute> {
+  bool _switchSelected=true; //维护单选开关状态
+  bool _checkboxSelected=true;//维护复选框状态
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        Switch(
+          value: _switchSelected,//当前状态
+          onChanged:(value){
+            //重新构建页面  
+            setState(() {
+              _switchSelected=value;
+            });
+          },
+        ),
+        Checkbox(
+          value: _checkboxSelected,
+          activeColor: Colors.red, //选中时的颜色
+          onChanged:(value){
+            setState(() {
+              _checkboxSelected=value;
+            });
+          } ,
+        )
+      ],
+    );
+  }
+}
+```
+上面代码中，由于需要维护`Switch`和`Checkbox`的选中状态，所以`SwitchAndCheckBoxTestRoute`继承自StatefulWidget 。在其build方法中分别构建了一个`Switch`和`Checkbox`，初始状态都为选中状态，当用户点击时，会将状态置反，然后回调用`setState()`通知Flutter framework重新构建UI。
+### 属性及外观
+Switch和Checkbox属性比较简单，它们都有一个`activeColor`属性，用于设置激活态的颜色。至于大小，到目前为止，Checkbox的大小是固定的，无法自定义，而Switch只能定义宽度，高度也是固定的。值得一提的是Checkbox有一个属性`tristate` ，表示是否为三态，其默认值为false ，这时Checkbox有两种状态即“选中”和“不选中”，对应的value值为true和false 。如果tristate值为true时，value的值会增加一个状态null。
+
+### 总结
+通过Switch和Checkbox我们可以看到，虽然它们本身是与状态（是否选中）关联的，但它们却不是自己来维护状态，而是需要父组件来管理状态，然后当用户点击时，再通过事件通知给父组件，这样是合理的，因为Switch和Checkbox是否选中本就和用户数据关联，而这些用户数据也不可能是它们的私有状态。我们在自定义组件时也应该思考一下哪种状态的管理方式最为合理。   
+`SwitchListTile` 和 `CheckboxListTile `  来开发我们需要带标题的 选择框
+## 输入框及表单
+Material组件库中提供了输入框组件TextField和表单组件Form。下面我们分别介绍一下。
+### TextField
+TextField用于文本输入，它提供了很多属性，我们先简单介绍一下主要属性的作用，然后通过几个示例来演示一下关键属性的用法。
+```dart
+const TextField({
+  ...
+  TextEditingController controller, 
+  FocusNode focusNode,
+  InputDecoration decoration = const InputDecoration(),
+  TextInputType keyboardType,
+  TextInputAction textInputAction,
+  TextStyle style,
+  TextAlign textAlign = TextAlign.start,
+  bool autofocus = false,
+  bool obscureText = false,
+  int maxLines = 1,
+  int maxLength,
+  bool maxLengthEnforced = true,
+  ValueChanged<String> onChanged,
+  VoidCallback onEditingComplete,
+  ValueChanged<String> onSubmitted,
+  List<TextInputFormatter> inputFormatters,
+  bool enabled,
+  this.cursorWidth = 2.0,
+  this.cursorRadius,
+  this.cursorColor,
+  ...
+})
+```
+- `controller`：编辑框的控制器，通过它可以设置/获取编辑框的内容、选择编辑内容、监听编辑文本改变事件。大多数情况下我们都需要显式提供一个controller来与文本框交互。如果没有提供controller，则TextField内部会自动创建一个。
+
+- `focusNode`：用于控制TextField是否占有当前键盘的输入焦点。它是我们和键盘交互的一个句柄（handle）。
+
+- `InputDecoration`：用于控制TextField的外观显示，如提示文本、背景颜色、边框等。
+
+- `keyboardType`：用于设置该输入框默认的键盘输入类型，取值如下：  
+
+| TextInputType枚举值 |	含义 |
+| :---: | :---: |
+| text |	文本输入键盘 |
+| multiline	| 多行文本，需和maxLines配合使用(设为null或大于1) |
+| number |		数字；会弹出数字键盘 |
+| phone |		优化后的电话号码输入键盘；会弹出数字键盘并显示“* #” |
+| datetime |	优化后的日期输入键盘；Android上会显示“: -” |
+| emailAddress |	优化后的电子邮件地址；会显示“@ .” |
+| url |	优化后的url输入键盘； 会显示“/ .” |
+
+- `textInputAction`：键盘动作按钮图标(即回车键位图标)，它是一个枚举值，有多个可选值，全部的取值列表可以查看API文档
+- `style`：正在编辑的文本样式。
+
+- `textAlign`: 输入框内编辑文本在水平方向的对齐方式。
+
+- `autofocus`: 是否自动获取焦点。
+
+- `obscureText`：是否隐藏正在编辑的文本，如用于输入密码的场景等，文本内容会用“•”替换。
+
+- `maxLines`：输入框的最大行数，默认为1；如果为null，则无行数限制。
+
+- `maxLength和maxLengthEnforced` ：`maxLength`代表输入框文本的最大长度，设置后输入框右下角会显示输入的文本计数。
+
+`maxLengthEnforced`决定当输入文本长度超过`maxLength`时是否阻止输入，为`true`时会阻止输入，为`false`时不会阻止输入但输入框会变红。
+
+- `onChange`：输入框内容改变时的回调函数；注：内容改变事件也可以通过`controller`来监听。
+
+- `onEditingComplete和onSubmitted`：这两个回调都是在输入框输入完成时触发，比如按了键盘的完成键（对号图标）或搜索键（🔍图标）。不同的是两个回调签名不同，`onSubmitted`回调是`ValueChanged<String>`类型，它接收当前输入内容做为参数，而`onEditingComplete`不接收参数。
+
+- `inputFormatters`：用于指定输入格式；当用户输入内容改变时，会根据指定的格式来校验。
+
+- `enable`：如果为`false`，则输入框会被禁用，禁用状态不接收输入和事件，同时显示禁用态样式（在其decoration中定义）。
+
+- `cursorWidth、cursorRadius和cursorColor`：这三个属性是用于自定义输入框光标宽度、圆角和颜色的。
+### 示例：登录输入框
+```dart
+Column(
+  children: <Widget>[
+    TextField(
+      autofocus: true,
+      decoration: InputDecoration(
+          labelText: "用户名",
+          hintText: "用户名或邮箱",
+          prefixIcon: Icon(Icons.person)
+      ),
+    ),
+    TextField(
+      decoration: InputDecoration(
+          labelText: "密码",
+          hintText: "您的登录密码",
+          prefixIcon: Icon(Icons.lock)
+      ),
+      obscureText: true,
+    ),
+  ],
+);
+```
+### 获取输入内容
+获取输入内容有两种方式：
+
+1. 定义两个变量，用于保存用户名和密码，然后在onChange触发时，各自保存一下输入内容。
+2. 通过controller直接获取。
+第一种方式比较简单，不在举例，我们来重点看一下第二种方式，我们以用户名输入框举例：
+
+定义一个controller：
+```dart
+//定义一个controller
+TextEditingController _unameController = TextEditingController();
+//然后设置输入框controller：
+
+TextField(
+    autofocus: true,
+    controller: _unameController, //设置controller
+    ...
+)
+
+//通过controller获取输入框内容
+print(_unameController.text)
+```
+#### 监听焦点状态改变事件
+FocusNode继承自ChangeNotifier，通过FocusNode可以监听焦点的改变事件，如：
+```dart
+...
+// 创建 focusNode   
+FocusNode focusNode = new FocusNode();
+...
+// focusNode绑定输入框   
+TextField(focusNode: focusNode);
+...
+// 监听焦点变化    
+focusNode.addListener((){
+   print(focusNode.hasFocus);
+});
+```
+获得焦点时focusNode.hasFocus值为true，失去焦点时为false。
