@@ -29,6 +29,7 @@ module.exports = {
                         '/study/flutter/async',
                         '/study/flutter/flutterApp',
                         '/study/flutter/baseWidget',
+                        '/study/flutter/layoutWidget',
                     ]
                 },
                 {
