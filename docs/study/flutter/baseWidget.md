@@ -1183,3 +1183,362 @@ focusNode.addListener((){
 });
 ```
 获得焦点时focusNode.hasFocus值为true，失去焦点时为false。
+#### 自定义样式
+虽然我们可以通过`decoration`属性来定义输入框样式，下面以自定义输入框下划线颜色为例来介绍一下：
+```dart
+TextField(
+  decoration: InputDecoration(
+    labelText: "请输入用户名",
+    prefixIcon: Icon(Icons.person),
+    // 未获得焦点下划线设为灰色
+    enabledBorder: UnderlineInputBorder(
+      borderSide: BorderSide(color: Colors.grey),
+    ),
+    //获得焦点下划线设为蓝色
+    focusedBorder: UnderlineInputBorder(
+      borderSide: BorderSide(color: Colors.blue),
+    ),
+  ),
+),
+```
+上面代码我们直接通过InputDecoration的enabledBorder和focusedBorder来分别设置了输入框在未获取焦点和获得焦点后的下划线颜色。另外，我们也可以通过主题来自定义输入框的样式，下面我们探索一下如何在不使用enabledBorder和focusedBorder的情况下来自定义下滑线颜色。   
+
+由于`TextField`在绘制下划线时使用的颜色是主题色里面的`hintColor`，但提示文本颜色也是用的`hintColor`， 如果我们直接修改`hintColor`，那么下划线和提示文本的颜色都会变。值得高兴的是`decoration`中可以设置`hintStyle`，它可以覆盖`hintColor`，并且主题中可以通过`inputDecorationTheme`来设置输入框默认的`decoration`。所以我们可以通过主题来自定义，代码如下：
+```dart
+Theme(
+  data: Theme.of(context).copyWith(
+      hintColor: Colors.grey[200], //定义下划线颜色
+      inputDecorationTheme: InputDecorationTheme(
+          labelStyle: TextStyle(color: Colors.grey),//定义label字体样式
+          hintStyle: TextStyle(color: Colors.grey, fontSize: 14.0)//定义提示文本样式
+      )
+  ),
+  child: Column(
+    children: <Widget>[
+      TextField(
+        decoration: InputDecoration(
+            labelText: "用户名",
+            hintText: "用户名或邮箱",
+            prefixIcon: Icon(Icons.person)
+        ),
+      ),
+      TextField(
+        decoration: InputDecoration(
+            prefixIcon: Icon(Icons.lock),
+            labelText: "密码",
+            hintText: "您的登录密码",
+            hintStyle: TextStyle(color: Colors.grey, fontSize: 13.0)
+        ),
+        obscureText: true,
+      )
+    ],
+  )
+)
+```
+我们成功的自定义了下划线颜色和提问文字样式，细心的读者可能已经发现，通过这种方式自定义后，输入框在获取焦点时，`labelText`不会高亮显示了，正如上图中的"用户名"本应该显示蓝色，但现在却显示为灰色，并且我们还是无法定义下划线宽度。另一种灵活的方式是直接隐藏掉`TextField`本身的下划线，然后通过`Container`去嵌套定义样式，如:
+```dart
+Container(
+  child: TextField(
+    keyboardType: TextInputType.emailAddress,
+    decoration: InputDecoration(
+        labelText: "Email",
+        hintText: "电子邮件地址",
+        prefixIcon: Icon(Icons.email),
+        border: InputBorder.none //隐藏下划线
+    )
+  ),
+  decoration: BoxDecoration(
+      // 下滑线浅灰色，宽度1像素
+      border: Border(bottom: BorderSide(color: Colors.grey[200], width: 1.0))
+  ),
+)
+```
+通过这种组件组合的方式，也可以定义背景圆角等。一般来说，优先通过`decoration`来自定义样式，如果`decoration`实现不了，再用`widget`组合的方式。
+### 表单Form
+实际业务中，在正式向服务器提交数据前，都会对各个输入框数据进行合法性校验，但是对每一个`TextField`都分别进行校验将会是一件很麻烦的事。还有，如果用户想清除一组`TextField`的内容，除了一个一个清除有没有什么更好的办法呢？为此，Flutter提供了一个`Form` 组件，它可以对输入框进行分组，然后进行一些统一操作，如输入内容校验、输入框重置以及输入内容保存。
+
+#### Form
+`Form`继承自`StatefulWidget`对象，它对应的状态类为`FormState`。我们先看看Form类的定义：
+```dart
+Form({
+  @required Widget child,
+  bool autovalidate = false,
+  WillPopCallback onWillPop,
+  VoidCallback onChanged,
+})
+```
+- `autovalidate`：是否自动校验输入内容；当为`true`时，每一个子`FormField`内容发生变化时都会自动校验合法性，并直接显示错误信息。否则，需要通过调用`FormState.validate()`来手动校验。
+- `onWillPop`：决定`Form`所在的路由是否可以直接返回（如点击返回按钮），该回调返回一个`Future`对象，如果`Future`的最终结果是`false`，则当前路由不会返回；如果为`true`，则会返回到上一个路由。此属性通常用于拦截返回按钮。
+- `onChanged`：`Form`的任意一个子`FormField`内容发生变化时会触发此回调。
+#### FormField
+`Form`的子孙元素必须是`FormField`类型，`FormField`是一个抽象类，定义几个属性，`FormState`内部通过它们来完成操作，FormField部分定义如下：
+```dart
+const FormField({
+  ...
+  FormFieldSetter<T> onSaved, //保存回调
+  FormFieldValidator<T>  validator, //验证回调
+  T initialValue, //初始值
+  bool autovalidate = false, //是否自动校验。
+})
+```
+为了方便使用，`Flutter`提供了一个`TextFormField`组件，它继承自`FormField`类，也是`TextField`的一个包装类，所以除了`FormField`定义的属性之外，它还包括TextField的属性。
+
+#### FormState
+`FormState`为Form的`State`类，可以通过`Form.of()`或`GlobalKey`获得。我们可以通过它来对`Form`的子孙`FormField`进行统一操作。我们看看其常用的三个方法：
+
+- `FormState.validate()`：调用此方法后，会调用Form子孙FormField的validate回调，如果有一个校验失败，则返回false，所有校验失败项都会返回用户返回的错误提示。
+- `FormState.save()`：调用此方法后，会调用Form子孙FormField的save回调，用于保存表单内容
+- `FormState.reset()`：调用此方法后，会将子孙FormField的内容清空。
+
+#### 示例
+我们修改一下上面用户登录的示例，在提交之前校验：  
+
+用户名不能为空，如果为空则提示“用户名不能为空”。  
+密码不能小于6位，如果小于6为则提示“密码不能少于6位”。  
+完整代码：
+```dart
+class FormTestRoute extends StatefulWidget {
+  @override
+  _FormTestRouteState createState() => new _FormTestRouteState();
+}
+
+class _FormTestRouteState extends State<FormTestRoute> {
+  TextEditingController _unameController = new TextEditingController();
+  TextEditingController _pwdController = new TextEditingController();
+  GlobalKey _formKey= new GlobalKey<FormState>();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title:Text("Form Test"),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
+        child: Form(
+          key: _formKey, //设置globalKey，用于后面获取FormState
+          autovalidate: true, //开启自动校验
+          child: Column(
+            children: <Widget>[
+              TextFormField(
+                  autofocus: true,
+                  controller: _unameController,
+                  decoration: InputDecoration(
+                      labelText: "用户名",
+                      hintText: "用户名或邮箱",
+                      icon: Icon(Icons.person)
+                  ),
+                  // 校验用户名
+                  validator: (v) {
+                    return v
+                        .trim()
+                        .length > 0 ? null : "用户名不能为空";
+                  }
+
+              ),
+              TextFormField(
+                  controller: _pwdController,
+                  decoration: InputDecoration(
+                      labelText: "密码",
+                      hintText: "您的登录密码",
+                      icon: Icon(Icons.lock)
+                  ),
+                  obscureText: true,
+                  //校验密码
+                  validator: (v) {
+                    return v
+                        .trim()
+                        .length > 5 ? null : "密码不能少于6位";
+                  }
+              ),
+              // 登录按钮
+              Padding(
+                padding: const EdgeInsets.only(top: 28.0),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: RaisedButton(
+                        padding: EdgeInsets.all(15.0),
+                        child: Text("登录"),
+                        color: Theme
+                            .of(context)
+                            .primaryColor,
+                        textColor: Colors.white,
+                        onPressed: () {
+                          //在这里不能通过此方式获取FormState，context不对
+                          //print(Form.of(context));
+
+                          // 通过_formKey.currentState 获取FormState后，
+                          // 调用validate()方法校验用户名密码是否合法，校验
+                          // 通过后再提交数据。 
+                          if((_formKey.currentState as FormState).validate()){
+                            //验证通过提交数据
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+注意，登录按钮的`onPressed`方法中不能通过`Form.of(context)`来获取，原因是，此处的`context`为`FormTestRoute`的`context`，而`Form.of(context)`是根据所指定`context`向根去查找，而`FormState`是在`FormTestRoute`的子树中，所以不行。正确的做法是通过`Builder`来构建登录按钮，`Builder`会将`widget`节点的`context`作为回调参数：
+```dart
+Expanded(
+ // 通过Builder来获取RaisedButton所在widget树的真正context(Element) 
+  child:Builder(builder: (context){
+    return RaisedButton(
+      ...
+      onPressed: () {
+        //由于本widget也是Form的子代widget，所以可以通过下面方式获取FormState  
+        if(Form.of(context).validate()){
+          //验证通过提交数据
+        }
+      },
+    );
+  })
+)
+```
+其实`context`正是操作`Widget`所对应的`Element`的一个接口，由于`Widget`树对应的`Element`都是不同的，所以`context`也都是不同的，
+
+## 进度指示器
+`Material` 组件库中提供了两种进度指示器：`LinearProgressIndicator`和`CircularProgressIndicator`，它们都可以同时用于精确的进度指示和模糊的进度指示。精确进度通常用于任务进度可以计算和预估的情况，比如文件下载；而模糊进度则用户任务进度无法准确获得的情况，如下拉刷新，数据提交等。
+
+### LinearProgressIndicator
+`LinearProgressIndicator`是一个线性、条状的进度条，定义如下：
+```dart
+LinearProgressIndicator({
+  double value,
+  Color backgroundColor,
+  Animation<Color> valueColor,
+  ...
+})
+```
+- `value`：value表示当前的进度，取值范围为[0,1]；如果value为null时则指示器会执行一个循环动画（模糊进度）；当value不为null时，指示器为一个具体进度的进度条。
+- `backgroundColor`：指示器的背景色。
+- `valueColor`: 指示器的进度条颜色；值得注意的是，该值类型是`Animation<Color>`，这允许我们对进度条的颜色也可以指定动画。如果我们不需要对进度条颜色执行动画，换言之，我们想对进度条应用一种固定的颜色，此时我们可以通过`AlwaysStoppedAnimation`来指定。
+#### 示例
+```dart
+// 模糊进度条(会执行一个动画)
+LinearProgressIndicator(
+  backgroundColor: Colors.grey[200],
+  valueColor: AlwaysStoppedAnimation(Colors.blue),
+),
+//进度条显示50%
+LinearProgressIndicator(
+  backgroundColor: Colors.grey[200],
+  valueColor: AlwaysStoppedAnimation(Colors.blue),
+  value: .5, 
+)
+```
+第一个进度条在执行循环动画：蓝色条一直在移动，而第二个进度条是静止的，停在50%的位置。
+### CircularProgressIndicator
+`CircularProgressIndicator`是一个圆形进度条，定义如下：
+```dart
+ CircularProgressIndicator({
+  double value,
+  Color backgroundColor,
+  Animation<Color> valueColor,
+  this.strokeWidth = 4.0,
+  ...   
+})
+```
+前三个参数和`LinearProgressIndicator`相同，不再赘述。`strokeWidth` 表示圆形进度条的粗细。示例如下：
+```dart
+// 模糊进度条(会执行一个旋转动画)
+CircularProgressIndicator(
+  backgroundColor: Colors.grey[200],
+  valueColor: AlwaysStoppedAnimation(Colors.blue),
+),
+//进度条显示50%，会显示一个半圆
+CircularProgressIndicator(
+  backgroundColor: Colors.grey[200],
+  valueColor: AlwaysStoppedAnimation(Colors.blue),
+  value: .5,
+),
+```
+### 自定义尺寸
+我们可以发现`LinearProgressIndicator`和`CircularProgressIndicator`，并没有提供设置圆形进度条尺寸的参数；如果我们希望`LinearProgressIndicator`的线细一些，或者希望`CircularProgressIndicator`的圆大一些该怎么做？
+
+其实`LinearProgressIndicator`和`CircularProgressIndicator`都是取父容器的尺寸作为绘制的边界的。知道了这点，我们便可以通过尺寸限制类`Widget`，如`ConstrainedBox`、`SizedBox `如：
+```dart
+// 线性进度条高度指定为3
+SizedBox(
+  height: 3,
+  child: LinearProgressIndicator(
+    backgroundColor: Colors.grey[200],
+    valueColor: AlwaysStoppedAnimation(Colors.blue),
+    value: .5,
+  ),
+),
+// 圆形进度条直径指定为100
+SizedBox(
+  height: 100,
+  width: 100,
+  child: CircularProgressIndicator(
+    backgroundColor: Colors.grey[200],
+    valueColor: AlwaysStoppedAnimation(Colors.blue),
+    value: .7,
+  ),
+),
+```
+### 进度色动画
+前面说过可以通过`valueColor`对进度条颜色做动画，
+
+我们实现一个进度条在3秒内从灰色变成蓝色的动画：
+```dart
+import 'package:flutter/material.dart';
+
+class ProgressRoute extends StatefulWidget {
+  @override
+  _ProgressRouteState createState() => _ProgressRouteState();
+}
+
+class _ProgressRouteState extends State<ProgressRoute>
+    with SingleTickerProviderStateMixin {
+  AnimationController _animationController;
+
+  @override
+  void initState() {
+    //动画执行时间3秒  
+    _animationController =
+        new AnimationController(vsync: this, duration: Duration(seconds: 3));
+    _animationController.forward();
+    _animationController.addListener(() => setState(() => {}));
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        children: <Widget>[
+            Padding(
+            padding: EdgeInsets.all(16),
+            child: LinearProgressIndicator(
+              backgroundColor: Colors.grey[200],
+              valueColor: ColorTween(begin: Colors.grey, end: Colors.blue)
+                .animate(_animationController), // 从灰色变成蓝色
+              value: _animationController.value,
+            ),
+          );
+        ],
+      ),
+    );
+  }
+}
+```
+### 自定义进度指示器样式
+定制进度指示器风格样式，可以通过`CustomPainter Widget `来自定义绘制逻辑，实际上`LinearProgressIndicator`和`CircularProgressIndicator`也正是通过`CustomPainter`来实现外观绘制的。
