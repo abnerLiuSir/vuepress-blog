@@ -407,10 +407,11 @@ Stack({
 })
 ```
 - `alignment`：此参数决定如何去对齐没有定位（没有使用Positioned）或部分定位的子组件。所谓部分定位，在这里特指没有在某一个轴上定位：`left、right`为横轴，`top、bottom`为纵轴，只要包含某个轴上的一个定位属性就算在该轴上有定位。
-- `textDirection`：和`Row、Wrap`的`textDirection`功能一样，都用于确定`alignment`对齐的参考系，即：`textDirection`的值为`TextDirection.ltr`，则`alignment`的`start`代表左，`end`代表右，即从左往右的顺序；`textDirection`的值为TextDirection.rtl，则alignment的start代表右，end代表左，即从右往左的顺序。
-fit：此参数用于确定没有定位的子组件如何去适应Stack的大小。StackFit.loose表示使用子组件的大小，StackFit.expand表示扩伸到Stack的大小。
-overflow：此属性决定如何显示超出Stack显示空间的子组件；值为Overflow.clip时，超出部分会被剪裁（隐藏），值为Overflow.visible 时则不会。
-Positioned
+- `textDirection`：和`Row、Wrap`的`textDirection`功能一样，都用于确定`alignment`对齐的参考系，即：`textDirection`的值为`TextDirection.ltr`，则`alignment`的`start`代表左，`end`代表右，即从左往右的顺序；`textDirection`的值为`TextDirection.rtl`，则`alignment`的`start`代表右，`end`代表左，即从右往左的顺序。
+- `fit`：此参数用于确定没有定位的子组件如何去适应`Stack`的大小。`StackFit.loose`表示使用子组件的大小，`StackFit.expand`表示扩伸到`Stack`的大小。
+- `overflow`：此属性决定如何显示超出`Stack`显示空间的子组件；值为`Overflow.clip`时，超出部分会被剪裁（隐藏），值为`Overflow.visible` 时则不会。
+### Positioned
+```dart
 const Positioned({
   Key key,
   this.left, 
@@ -421,4 +422,188 @@ const Positioned({
   this.height,
   @required Widget child,
 })
-left、top 、right、 bottom分别代表离Stack左、上、右、底四边的距离。width和height用于指定需要定位元素的宽度和高度。注意，Positioned的width、height 和其它地方的意义稍微有点区别，此处用于配合left、top 、right、 bottom来定位组件，举个例子，在水平方向时，你只能指定left、right、width三个属性中的两个，如指定left和width后，right会自动算出(left+width)，如果同时指定三个属性则会报错，垂直方向同理。
+```
+`left、top 、right、 bottom`分别代表离`Stack`左、上、右、底四边的距离。`width`和`height`用于指定需要定位元素的宽度和高度。注意，`Positioned`的`width`、`height `和其它地方的意义稍微有点区别，此处用于配合l`eft、top 、right、 bottom`来定位组件，举个例子，在水平方向时，你只能指定`left、right、width`三个属性中的两个，如指定`left`和`width`后，`right`会自动算出(`left+width`)，如果同时指定三个属性则会报错，垂直方向同理。
+
+### 示例
+在下面的例子中，我们通过对几个Text组件的定位来演示Stack和Positioned的特性：
+```dart
+//通过ConstrainedBox来确保Stack占满屏幕
+ConstrainedBox(
+  constraints: BoxConstraints.expand(),
+  child: Stack(
+    alignment:Alignment.center , //指定未定位或部分定位widget的对齐方式
+    children: <Widget>[
+      Container(child: Text("Hello world",style: TextStyle(color: Colors.white)),
+        color: Colors.red,
+      ),
+      Positioned(
+        left: 18.0,
+        child: Text("I am Jack"),
+      ),
+      Positioned(
+        top: 18.0,
+        child: Text("Your friend"),
+      )        
+    ],
+  ),
+);
+```
+由于第一个子文本组件`Text("Hello world")`没有指定定位，并且`alignment`值为`Alignment.center`，所以它会居中显示。第二个子文本组件`Text("I am Jack")`只指定了水平方向的定位(`left`)，所以属于部分定位，即垂直方向上没有定位，那么它在垂直方向的对齐方式则会按照`alignmen`t指定的对齐方式对齐，即垂直方向居中。对于第三个子文本组件`Text("Your friend")`，和第二个`Text`原理一样，只不过是水平方向没有定位，则水平方向居中。  
+
+我们给上例中的`Stack`指定一个`fit`属性，然后将三个子文本组件的顺序调整一下：
+```dart
+Stack(
+  alignment:Alignment.center ,
+  fit: StackFit.expand, //未定位widget占满Stack整个空间
+  children: <Widget>[
+    Positioned(
+      left: 18.0,
+      child: Text("I am Jack"),
+    ),
+    Container(child: Text("Hello world",style: TextStyle(color: Colors.white)),
+      color: Colors.red,
+    ),
+    Positioned(
+      top: 18.0,
+      child: Text("Your friend"),
+    )
+  ],
+),
+```
+可以看到，由于第二个子文本组件没有定位，所以`fit`属性会对它起作用，就会占满`Stack`。由于`Stack`子元素是堆叠的，所以第一个子文本组件被第二个遮住了，而第三个在最上层，所以可以正常显示。
+
+## 对齐与相对定位（Align）
+在上一节中我们讲过通过`Stack`和`Positioned`，我们可以指定一个或多个子元素相对于父元素各个边的精确偏移，并且可以重叠。但如果我们只想简单的调整一个子元素在父元素中的位置的话，使用`Align`组件会更简单一些。
+
+### Align
+`Align` 组件可以调整子组件的位置，并且可以根据子组件的宽高来确定自身的的宽高，定义如下：
+```dart
+Align({
+  Key key,
+  this.alignment = Alignment.center,
+  this.widthFactor,
+  this.heightFactor,
+  Widget child,
+})
+```
+- `alignment` : 需要一个`AlignmentGeometry`类型的值，表示子组件在父组件中的起始位置。`AlignmentGeometry` 是一个抽象类，它有两个常用的子类：`Alignment`和 `FractionalOffset`，我们将在下面的示例中详细介绍。
+- `widthFactor`和`heightFactor`是用于确定`Align` 组件本身宽高的属性；它们是两个缩放因子，会分别乘以子元素的宽、高，最终的结果就是`Align` 组件的宽高。如果值为`null`，则组件的宽高将会占用尽可能多的空间。
+示例
+我们先来看一个简单的例子：
+```dart
+Container(
+  height: 120.0,
+  width: 120.0,
+  color: Colors.blue[50],
+  child: Align(
+    alignment: Alignment.topRight,
+    child: FlutterLogo(
+      size: 60,
+    ),
+  ),
+)
+```
+`FlutterLogo `是`Flutter` SDK提供的一个组件，内容就是`Flutter`的商标。在上面的例子中，我们显式指定了`Container`的宽、高都为120。如果我们不显式指定宽高，而通过同时指定`widthFactor`和`heightFactor `为2也是可以达到同样的效果：
+```dart
+Align(
+  widthFactor: 2,
+  heightFactor: 2,
+  alignment: Alignment.topRight,
+  child: FlutterLogo(
+    size: 60,
+  ),
+),
+```
+因为`FlutterLogo`的宽高为60，则`Align`的最终宽高都为2*60=120。
+
+另外，我们通过`Alignment.topRight`将`FlutterLogo`定位在`Container`的右上角。那`Alignment.topRight`是什么呢？通过源码我们可以看到其定义如下：
+```dart
+//右上角
+static const Alignment topRight = Alignment(1.0, -1.0);
+```
+可以看到它只是`Alignment`的一个实例，下面我们介绍一下`Alignment`。
+### Alignment
+`Alignment`继承自`AlignmentGeometry`，表示矩形内的一个点，他有两个属性`x`、`y`，分别表示在水平和垂直方向的偏移，`Alignment`定义如下：
+```dart
+Alignment(this.x, this.y)
+```
+`Alignment Widget`会以矩形的中心点作为坐标原点，即`Alignment(0.0, 0.0)` 。`x、y`的值从`-1`到`1`分别代表矩形左边到右边的距离和顶部到底边的距离，因此`2`个水平（或垂直）单位则等于矩形的宽（或高），如`Alignment(-1.0, -1.0)` 代表矩形的左侧顶点，而`Alignment(1.0, 1.0)`代表右侧底部终点，而`Alignment(1.0, -1.0)` 则正是右侧顶点，即`Alignment.topRight`。为了使用方便，矩形的原点、四个顶点，以及四条边的终点在`Alignment`类中都已经定义为了静态常量。
+
+`Alignment`可以通过其坐标转换公式将其坐标转为子元素的具体偏移坐标：
+```dart
+(Alignment.x*childWidth/2+childWidth/2, Alignment.y*childHeight/2+childHeight/2)
+```
+其中`childWidth`为子元素的宽度，`childHeight`为子元素高度。
+
+现在我们再看看上面的示例，我们将`Alignment(1.0, -1.0)`带入上面公式，可得`FlutterLogo`的实际偏移坐标正是`（60，0）`。下面再看一个例子：
+```dart
+ Align(
+  widthFactor: 2,
+  heightFactor: 2,
+  alignment: Alignment(2,0.0),
+  child: FlutterLogo(
+    size: 60,
+  ),
+)
+```
+我们可以先想象一下运行效果：将`Alignment(2,0.0)`带入上述坐标转换公式，可以得到`FlutterLogo`的实际偏移坐标为`（90，30）`。
+### FractionalOffset
+`FractionalOffset` 继承自 A`lignment`，它和 `Alignment`唯一的区别就是坐标原点不同！`FractionalOffset `的坐标原点为矩形的**左侧顶点**，这和布局系统的一致，所以理解起来会比较容易。`FractionalOffset`的坐标转换公式为：
+```dart
+实际偏移 = (FractionalOffse.x * childWidth, FractionalOffse.y * childHeight)
+```
+下面看一个例子：
+```dart
+Container(
+  height: 120.0,
+  width: 120.0,
+  color: Colors.blue[50],
+  child: Align(
+    alignment: FractionalOffset(0.2, 0.6),
+    child: FlutterLogo(
+      size: 60,
+    ),
+  ),
+)
+```
+我们将`FractionalOffset(0.2, 0.6)`带入坐标转换公式得`FlutterLogo`实际偏移为`（12，36）`，和实际运行效果吻合。
+### Align和Stack对比
+可以看到，`Align`和`Stack/Positioned`都可以用于指定子元素相对于父元素的偏移，但它们还是有两个主要区别：
+
+- 定位参考系统不同；`Stack/Positioned`定位的的参考系可以是父容器矩形的四个顶点；而`Align`则需要先通过`alignment` 参数来确定坐标原点，不同的`alignment`会对应不同原点，最终的偏移是需要通过`alignment`的转换公式来计算出。
+- `Stack`可以有多个子元素，并且子元素可以堆叠，而`Align`只能有一个子元素，不存在堆叠。
+### Center组件
+我们在前面章节的例子中已经使用过`Center`组件来居中子元素了，现在我们正式来介绍一下它。通过查找SDK源码，我们看到Center组件定义如下：
+```dart
+class Center extends Align {
+  const Center({ Key key, double widthFactor, double heightFactor, Widget child })
+    : super(key: key, widthFactor: widthFactor, heightFactor: heightFactor, child: child);
+}
+```
+可以看到`Center`继承自`Align`，它比`Align`只少了一个`alignment` 参数；由于`Align`的构造函数中`alignment` 值为`Alignment.center`，所以，我们可以认为`Center`组件其实是对齐方式确定（`Alignment.center`）了的`Align`。
+
+上面我们讲过当`widthFactor`或`heightFactor`为null时组件的宽高将会占用尽可能多的空间，这一点需要特别注意，我们通过一个示例说明：
+```dart
+...//省略无关代码
+DecoratedBox(
+  decoration: BoxDecoration(color: Colors.red),
+  child: Center(
+    child: Text("xxx"),
+  ),
+),
+DecoratedBox(
+  decoration: BoxDecoration(color: Colors.red),
+  child: Center(
+    widthFactor: 1,
+    heightFactor: 1,
+    child: Text("xxx"),
+  ),
+)
+```
+### 总结
+本节重点介绍了`Align`组件及两种偏移类`Alignment` 和`FractionalOffset`，读者需要理解这两种偏移类的区别及各自的坐标转化公式。另外，在此建议读者在需要制定一些精确的偏移时应优先使用`FractionalOffset`，因为它的坐标原点和布局系统相同，能更容易算出实际偏移。  
+
+在后面，我们又介绍了`Align`组件和`Stack/Positioned`、`Center`的关系，读者可以对比理解。
+
+还有，熟悉Web开发的同学可能会发现`Align`组件的特性和Web开发中相对定位（position: relative）非常像，是的！在大多数时候，我们可以直接使用`Align`组件来实现Web中相对定位的效果，读者可以类比记忆。
