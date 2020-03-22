@@ -30,6 +30,7 @@ module.exports = {
                         '/study/flutter/flutterApp',
                         '/study/flutter/baseWidget',
                         '/study/flutter/layoutWidget',
+                        '/study/flutter/containerWidget',
                     ]
                 },
                 {
