@@ -188,3 +188,128 @@ ConstrainedBox(
 ```
 ### 其它尺寸限制类容器
 除了上面介绍的这些常用的尺寸限制类容器外，还有一些其他的尺寸限制类容器，比如`AspectRatio`，它可以指定子组件的长宽比、`LimitedBox `用于指定最大宽高、`FractionallySizedBox `可以根据父容器宽高的百分比来设置子组件宽高等
+
+## 装饰容器DecoratedBox
+`DecoratedBox`可以在其子组件绘制前(或后)绘制一些装饰（`Decoration`），如背景、边框、渐变等。DecoratedBox定义如下：
+```dart
+const DecoratedBox({
+  Decoration decoration,
+  DecorationPosition position = DecorationPosition.background,
+  Widget child
+})
+```
+- `decoration`：代表将要绘制的装饰，它的类型为`Decoration`。`Decoration`是一个抽象类，它定义了一个接口 `createBoxPainter()`，子类的主要职责是需要通过实现它来创建一个画笔，该画笔用于绘制装饰。
+- `position`：此属性决定在哪里绘制`Decoration`，它接收`DecorationPosition`的枚举类型，该枚举类有两个值：
+1. `background`：在子组件之后绘制，即背景装饰。
+2. `foreground`：在子组件之上绘制，即前景。
+### BoxDecoration
+我们通常会直接使用`BoxDecoration`类，它是一个`Decoration`的子类，实现了常用的装饰元素的绘制。
+```dart
+BoxDecoration({
+  Color color, //颜色
+  DecorationImage image,//图片
+  BoxBorder border, //边框
+  BorderRadiusGeometry borderRadius, //圆角
+  List<BoxShadow> boxShadow, //阴影,可以指定多个
+  Gradient gradient, //渐变
+  BlendMode backgroundBlendMode, //背景混合模式
+  BoxShape shape = BoxShape.rectangle, //形状
+})
+```
+各个属性名都是自解释的，详情读者可以查看API文档。下面我们实现一个带阴影的背景色渐变的按钮：
+```dart
+ DecoratedBox(
+    decoration: BoxDecoration(
+      gradient: SweepGradient(colors:[Colors.red,Colors.orange[700]]), //背景渐变
+      borderRadius: BorderRadius.circular(3.0), //3像素圆角
+      boxShadow: [ //阴影
+        BoxShadow(
+            color:Colors.black54,
+            offset: Offset(2.0,2.0),
+            blurRadius: 4.0
+        )
+      ]
+    ),
+  child: Padding(padding: EdgeInsets.symmetric(horizontal: 80.0, vertical: 18.0),
+    child: Text("Login", style: TextStyle(color: Colors.white),),
+  )
+)
+```
+## 变换（Transform）
+`Transform`可以在其子组件绘制时对其应用一些矩阵变换来实现一些特效。`Matrix4`是一个4D矩阵，通过它我们可以实现各种矩阵操作，下面是一个例子：
+```dart
+Container(
+  color: Colors.black,
+  child: new Transform(
+    alignment: Alignment.topRight, //相对于坐标系原点的对齐方式
+    transform: new Matrix4.skewY(0.3), //沿Y轴倾斜0.3弧度
+    child: new Container(
+      padding: const EdgeInsets.all(8.0),
+      color: Colors.deepOrange,
+      child: const Text('Apartment for rent!'),
+    ),
+  ),
+);
+```
+### 平移
+Transform.translate接收一个offset参数，可以在绘制时沿x、y轴对子组件平移指定的距离。
+```dart
+DecoratedBox(
+  decoration:BoxDecoration(color: Colors.red),
+  //默认原点为左上角，左移20像素，向上平移5像素  
+  child: Transform.translate(
+    offset: Offset(-20.0, -5.0),
+    child: Text("Hello world"),
+  ),
+)
+```
+### 旋转
+`Transform.rotate`可以对子组件进行旋转变换，如：
+```dart
+DecoratedBox(
+  decoration:BoxDecoration(color: Colors.red),
+  child: Transform.rotate(
+    //旋转90度
+    angle:math.pi/2 ,
+    child: Text("Hello world"),
+  ),
+)；
+```
+注意：要使用math.pi需先进行如下导包。
+```dart
+import 'dart:math' as math;
+```
+### 缩放
+`Transform.scale`可以对子组件进行缩小或放大，如：
+```dart
+DecoratedBox(
+  decoration:BoxDecoration(color: Colors.red),
+  child: Transform.scale(
+      scale: 1.5, //放大到1.5倍
+      child: Text("Hello world")
+  )
+);
+```
+### 注意
+- `Transform`的变换是应用在绘制阶段，而并不是应用在布局(layout)阶段，所以无论对子组件应用何种变化，其占用空间的大小和在屏幕上的位置都是固定不变的，因为这些是在布局阶段就确定的。下面我们具体说明：
+```dart
+ Row(
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: <Widget>[
+    DecoratedBox(
+      decoration:BoxDecoration(color: Colors.red),
+      child: Transform.scale(scale: 1.5,
+          child: Text("Hello world")
+      )
+    ),
+    Text("你好", style: TextStyle(color: Colors.green, fontSize: 18.0),)
+  ],
+)
+```
+
+由于第一个Text应用变换(放大)后，其在绘制时会放大，但其占用的空间依然为红色部分，所以第二个Text会紧挨着红色部分，最终就会出现文字重合。
+
+- 由于矩阵变化只会作用在绘制阶段，所以在某些场景下，在`UI`需要变化时，可以直接通过矩阵变化来达到视觉上的`UI`改变，而不需要去重新触发`build`流程，这样会节省`layout`的开销，所以性能会比较好。如之前介绍的`Flow`组件，它内部就是用矩阵变换来更新`UI`，除此之外，`Flutter`的动画组件中也大量使用了`Transform`以提高性能。  
+
+由于`RotatedBox`是作用于`layout`阶段，所以子组件会旋转90度（而不只是绘制的内容），`decoration`会作用到子组件所占用的实际空间上，所以最终就是上图的效果，读者可以和前面`Transform.rotate`示例对比理解。
+
