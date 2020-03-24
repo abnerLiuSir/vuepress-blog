@@ -31,6 +31,7 @@ module.exports = {
                         '/study/flutter/baseWidget',
                         '/study/flutter/layoutWidget',
                         '/study/flutter/containerWidget',
+                        '/study/flutter/scrollWidget',
                     ]
                 },
                 {
